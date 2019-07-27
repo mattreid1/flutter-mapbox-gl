@@ -52,6 +52,8 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformView;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -758,7 +760,19 @@ final class MapboxMapController
   private Bitmap getImage(Symbol symbol, float density) throws IOException {
     AssetManager assetManager = registrar.context().getAssets();
     String assetPath;
+    Bitmap bitmap = null;
+    InputStream assetStream = null;
     AssetFileDescriptor assetFileDescriptor = null;
+
+    if (symbol.getIconImage().substring(0, 3).equals("!!!")) {
+      Log.d("URBANEXP", "Got it!");
+      String newPath = symbol.getIconImage().replace("!!!","");
+
+      File file = new File(newPath);
+      Log.d("URBANEXP", file.getPath());
+      bitmap = BitmapFactory.decodeFile(file.getPath());
+      return bitmap;
+    }
 
     // Split possible path into
     List<String> imagePathList = new ArrayList<>(Arrays.asList(symbol.getIconImage().split("/")));
@@ -795,7 +809,6 @@ final class MapboxMapController
         // Get possible path
         assetPath = registrar.lookupKeyForAsset(imagePath);
 
-
         try {
           // Read path (throws if doesn't exist)
           assetFileDescriptor = assetManager.openFd(assetPath);
@@ -813,8 +826,8 @@ final class MapboxMapController
       assetFileDescriptor = assetManager.openFd(assetPath); // Sets back to default
     }
 
-    InputStream assetStream = assetFileDescriptor.createInputStream();
-    Bitmap bitmap = BitmapFactory.decodeStream(assetStream);
+    assetStream = assetFileDescriptor.createInputStream();
+    bitmap = BitmapFactory.decodeStream(assetStream);
     assetFileDescriptor.close(); // Close for memory
 
     return bitmap;
